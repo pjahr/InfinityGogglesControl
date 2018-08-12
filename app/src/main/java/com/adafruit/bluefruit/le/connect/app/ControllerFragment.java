@@ -61,7 +61,14 @@ import com.google.android.gms.location.LocationServices;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
-public class ControllerFragment extends ConnectedPeripheralFragment implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, SensorEventListener, ControllerColorPickerFragment.ControllerColorPickerFragmentListener, ControllerPadFragment.ControllerPadFragmentListener, UartDataManager.UartDataManagerListener {
+public class ControllerFragment
+       extends ConnectedPeripheralFragment
+       implements GoogleApiClient.ConnectionCallbacks,
+                  GoogleApiClient.OnConnectionFailedListener,
+                  SensorEventListener,
+                  ControllerColorPickerFragment.ControllerColorPickerFragmentListener,
+                  ControllerPadFragment.ControllerPadFragmentListener,
+                  UartDataManager.UartDataManagerListener {
     // Log
     private final static String TAG = ControllerFragment.class.getSimpleName();
 
