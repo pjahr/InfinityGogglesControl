@@ -29,7 +29,8 @@ import com.larswerkman.holocolorpicker.SaturationBar;
 import com.larswerkman.holocolorpicker.ValueBar;
 import com.squareup.leakcanary.RefWatcher;
 
-public class ControllerColorPickerFragment extends Fragment implements ColorPicker.OnColorChangedListener {
+public class ControllerColorPickerFragment extends Fragment implements ColorPicker.OnColorChangedListener
+{
   // Log
   @SuppressWarnings("unused")
   private final static String TAG = ControllerColorPickerFragment.class.getSimpleName();
@@ -42,33 +43,38 @@ public class ControllerColorPickerFragment extends Fragment implements ColorPick
   private final static int kFirstTimeColor = 0x0000ff;
 
   // UI
-  private ColorPicker mColorPicker;
-  private View mRgbColorView;
-  private TextView mRgbTextView;
+  private ColorPicker _colorPicker;
+  private View _rgbColorView;
+  private TextView _rgbTextView;
 
   // Data
-  private int mSelectedColor;
-  private ControllerColorPickerFragmentListener mListener;
+  private int _selectedColor;
+  private ControllerColorPickerFragmentListener _listener;
 
   // region Lifecycle
   @SuppressWarnings("UnnecessaryLocalVariable")
-  public static ControllerColorPickerFragment newInstance() {
+  public static ControllerColorPickerFragment newInstance()
+  {
     ControllerColorPickerFragment fragment = new ControllerColorPickerFragment();
     return fragment;
   }
 
-  public ControllerColorPickerFragment() {
+  public ControllerColorPickerFragment()
+  {
     // Required empty public constructor
   }
 
   @Override
-  public void onCreate(Bundle savedInstanceState) {
+  public void onCreate(Bundle savedInstanceState)
+  {
     super.onCreate(savedInstanceState);
 
     AppCompatActivity activity = (AppCompatActivity) getActivity();
-    if (activity != null) {
+    if (activity != null)
+    {
       ActionBar actionBar = activity.getSupportActionBar();
-      if (actionBar != null) {
+      if (actionBar != null)
+      {
         actionBar.setTitle(R.string.colorpicker_title);
         actionBar.setDisplayHomeAsUpEnabled(true);
       }
@@ -76,57 +82,72 @@ public class ControllerColorPickerFragment extends Fragment implements ColorPick
   }
 
   @Override
-  public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+  public View onCreateView(@NonNull LayoutInflater inflater,
+                           ViewGroup container,
+                           Bundle savedInstanceState)
+  {
     // Inflate the layout for this fragment
     return inflater.inflate(R.layout.fragment_controller_colorpicker, container, false);
   }
 
   @Override
-  public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+  public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
+  {
     super.onViewCreated(view, savedInstanceState);
 
     // UI
-    mRgbColorView = view.findViewById(R.id.rgbColorView);
-    mRgbTextView = view.findViewById(R.id.rgbTextView);
+    _rgbColorView = view.findViewById(R.id.rgbColorView);
+    _rgbTextView = view.findViewById(R.id.rgbTextView);
 
     Button sendButton = view.findViewById(R.id.sendButton);
-    sendButton.setOnClickListener(view1 -> {
-      // Set the old color
-      mColorPicker.setOldCenterColor(mSelectedColor);
-      mListener.onSendColorComponents(mSelectedColor);
-    });
+    sendButton.setOnClickListener(view1 ->
+                                  {
+                                    // Set the old color
+                                    _colorPicker.setOldCenterColor(_selectedColor);
+                                    _listener.onSendColorComponents(_selectedColor);
+                                  });
 
     SaturationBar mSaturationBar = view.findViewById(R.id.brightnessbar);
     ValueBar mValueBar = view.findViewById(R.id.valuebar);
-    mColorPicker = view.findViewById(R.id.colorPicker);
-    if (mColorPicker != null) {
-      mColorPicker.addSaturationBar(mSaturationBar);
-      mColorPicker.addValueBar(mValueBar);
-      mColorPicker.setOnColorChangedListener(this);
+
+    _colorPicker = view.findViewById(R.id.colorPicker);
+
+    if (_colorPicker != null)
+    {
+      _colorPicker.addSaturationBar(mSaturationBar);
+      _colorPicker.addValueBar(mValueBar);
+      _colorPicker.setOnColorChangedListener(this);
     }
 
     final Context context = getContext();
-    if (context != null && kPersistValues) {
-      SharedPreferences preferences = context.getSharedPreferences(kPreferences, Context.MODE_PRIVATE);
-      mSelectedColor = preferences.getInt(kPreferences_color, kFirstTimeColor);
-    } else {
-      mSelectedColor = kFirstTimeColor;
+    if (context != null && kPersistValues)
+    {
+      SharedPreferences preferences = context.getSharedPreferences(kPreferences,
+                                                                   Context.MODE_PRIVATE);
+      _selectedColor = preferences.getInt(kPreferences_color, kFirstTimeColor);
+    }
+    else
+    {
+      _selectedColor = kFirstTimeColor;
     }
 
-    mColorPicker.setOldCenterColor(mSelectedColor);
-    mColorPicker.setColor(mSelectedColor);
-    onColorChanged(mSelectedColor);
+    _colorPicker.setOldCenterColor(_selectedColor);
+    _colorPicker.setColor(_selectedColor);
+
+    onColorChanged(_selectedColor);
   }
 
   @Override
-  public void onStop() {
+  public void onStop()
+  {
 
     final Context context = getContext();
     // Preserve values
-    if (context != null && kPersistValues) {
+    if (context != null && kPersistValues)
+    {
       SharedPreferences settings = context.getSharedPreferences(kPreferences, Context.MODE_PRIVATE);
       SharedPreferences.Editor editor = settings.edit();
-      editor.putInt(kPreferences_color, mSelectedColor);
+      editor.putInt(kPreferences_color, _selectedColor);
       editor.apply();
     }
 
@@ -134,26 +155,35 @@ public class ControllerColorPickerFragment extends Fragment implements ColorPick
   }
 
   @Override
-  public void onAttach(Context context) {
+  public void onAttach(Context context)
+  {
     super.onAttach(context);
-    if (context instanceof NeopixelColorPickerFragment.NeopixelColorPickerFragmentListener) {
-      mListener = (ControllerColorPickerFragmentListener) context;
-    } else if (getTargetFragment() instanceof ControllerColorPickerFragmentListener) {
-      mListener = (ControllerColorPickerFragmentListener) getTargetFragment();
-    } else {
+    if (context instanceof NeopixelColorPickerFragment.NeopixelColorPickerFragmentListener)
+    {
+      _listener = (ControllerColorPickerFragmentListener) context;
+    }
+    else if (getTargetFragment() instanceof ControllerColorPickerFragmentListener)
+    {
+      _listener = (ControllerColorPickerFragmentListener) getTargetFragment();
+    }
+    else
+    {
       throw new RuntimeException(context.toString() + " must implement NeopixelColorPickerFragmentListener");
     }
   }
 
   @Override
-  public void onDetach() {
+  public void onDetach()
+  {
     super.onDetach();
-    mListener = null;
+    _listener = null;
   }
 
   @Override
-  public void onDestroy() {
-    if (BuildConfig.DEBUG && getActivity() != null) {
+  public void onDestroy()
+  {
+    if (BuildConfig.DEBUG && getActivity() != null)
+    {
       RefWatcher refWatcher = BluefruitApplication.getRefWatcher(getActivity());
       refWatcher.watch(this);
     }
@@ -162,23 +192,30 @@ public class ControllerColorPickerFragment extends Fragment implements ColorPick
   }
 
   @Override
-  public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+  public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
+  {
     super.onCreateOptionsMenu(menu, inflater);
     inflater.inflate(R.menu.menu_help, menu);
   }
 
   @Override
-  public boolean onOptionsItemSelected(MenuItem item) {
+  public boolean onOptionsItemSelected(MenuItem item)
+  {
     FragmentActivity activity = getActivity();
 
-    switch (item.getItemId()) {
+    switch (item.getItemId())
+    {
       case R.id.action_help:
-        if (activity != null) {
+        if (activity != null)
+        {
           FragmentManager fragmentManager = activity.getSupportFragmentManager();
-          if (fragmentManager != null) {
-            CommonHelpFragment helpFragment = CommonHelpFragment.newInstance(getString(R.string.colorpicker_help_title), getString(R.string.colorpicker_help_text));
-            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction()
-                                                              .replace(R.id.contentLayout, helpFragment, "Help");
+          if (fragmentManager != null)
+          {
+            CommonHelpFragment helpFragment = CommonHelpFragment.newInstance(getString(R.string.colorpicker_help_title),
+                                                                             getString(R.string.colorpicker_help_text));
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction().replace(R.id.contentLayout,
+                                                                                                 helpFragment,
+                                                                                                 "Help");
             fragmentTransaction.addToBackStack(null);
             fragmentTransaction.commit();
           }
@@ -196,23 +233,25 @@ public class ControllerColorPickerFragment extends Fragment implements ColorPick
 
   @SuppressWarnings("PointlessBitwiseExpression")
   @Override
-  public void onColorChanged(int color) {
+  public void onColorChanged(int color)
+  {
     // Save selected color
-    mSelectedColor = color;
+    _selectedColor = color;
 
     // Update UI
-    mRgbColorView.setBackgroundColor(color);
+    _rgbColorView.setBackgroundColor(color);
 
     final int r = (color >> 16) & 0xFF;
     final int g = (color >> 8) & 0xFF;
     final int b = (color >> 0) & 0xFF;
     final String text = String.format(getString(R.string.colorpicker_rgb_format), r, g, b);
-    mRgbTextView.setText(text);
+    _rgbTextView.setText(text);
   }
 
   // endregion
 
-  interface ControllerColorPickerFragmentListener {
+  interface ControllerColorPickerFragmentListener
+  {
     void onSendColorComponents(int color);
   }
 }
