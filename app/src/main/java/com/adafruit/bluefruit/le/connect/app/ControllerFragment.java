@@ -85,15 +85,13 @@ public class ControllerFragment extends ConnectedPeripheralFragment implements G
   private static final int kModule_ControlPad = 0;
   private static final int kModule_ColorPicker = 1;
   private static final int kNumModules = 2;
-
+  private final Handler mMainHandler = new Handler(Looper.getMainLooper());
   // UI
   private ControllerAdapter mControllerAdapter;
   private AlertDialog mRequestLocationDialog;
-
   // Data
   private GoogleApiClient mGoogleApiClient;
   private Handler sendDataHandler = new Handler();
-  private final Handler mMainHandler = new Handler(Looper.getMainLooper());
   private FusedLocationProviderClient mFusedLocationClient;
 
   private UartDataManager mUartDataManager;
@@ -112,31 +110,6 @@ public class ControllerFragment extends ConnectedPeripheralFragment implements G
   private boolean isSensorPollingEnabled = false;
 
   private WeakReference<ControllerPadFragment> mWeakControllerPadFragment = null;
-
-
-  // region LocationCallback
-  // Create a WeakReference to LocationCallback to avoid memory leaks in GoogleServices: https://github.com/googlesamples/android-play-location/issues/26
-  private static class LocationCallbackReference extends LocationCallback
-  {
-
-    private WeakReference<LocationCallback> weakLocationCallback;
-
-    LocationCallbackReference(LocationCallback locationCallback)
-    {
-      weakLocationCallback = new WeakReference<>(locationCallback);
-    }
-
-    @Override
-    public void onLocationResult(LocationResult locationResult)
-    {
-      super.onLocationResult(locationResult);
-      if (weakLocationCallback.get() != null)
-      {
-        weakLocationCallback.get().onLocationResult(locationResult);
-      }
-    }
-  }
-
   private LocationCallback mInternalLocationCallback = new LocationCallback()
   {
     @Override
@@ -146,10 +119,48 @@ public class ControllerFragment extends ConnectedPeripheralFragment implements G
       setLastLocation(location);
     }
   };
-
   private LocationCallbackReference mLocationCallback = new LocationCallbackReference(
           mInternalLocationCallback);
+  private Runnable mPeriodicallySendData = new Runnable()
+  {
+    @Override
+    public void run()
+    {
+      final String[] prefixes = {"!Q", "!A", "!G", "!M", "!L"};     // same order that kSensorType
+
+      for (int i = 0; i < mSensorData.length; i++)
+      {
+        SensorData sensorData = mSensorData[i];
+
+        if (sensorData.enabled && sensorData.values != null)
+        {
+          ByteBuffer buffer = ByteBuffer.allocate(2 + sensorData.values.length * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+
+          // prefix
+          String prefix = prefixes[sensorData.sensorType];
+          buffer.put(prefix.getBytes());
+
+          // values
+          for (int j = 0; j < sensorData.values.length; j++)
+          {
+            buffer.putFloat(sensorData.values[j]);
+          }
+
+          byte[] result = buffer.array();
+          Log.d(TAG, "Send data for sensor: " + i);
+          sendCrcData(result);
+        }
+      }
+
+      sendDataHandler.postDelayed(this, kSendDataInterval);
+    }
+  };
   // endregion
+
+  public ControllerFragment()
+  {
+    // Required empty public constructor
+  }
 
   // region Fragment Lifecycle
   public static ControllerFragment newInstance(@Nullable String singlePeripheralIdentifier)
@@ -157,11 +168,6 @@ public class ControllerFragment extends ConnectedPeripheralFragment implements G
     ControllerFragment fragment = new ControllerFragment();
     fragment.setArguments(createFragmentArgs(singlePeripheralIdentifier));
     return fragment;
-  }
-
-  public ControllerFragment()
-  {
-    // Required empty public constructor
   }
 
   @Override
@@ -735,43 +741,7 @@ public class ControllerFragment extends ConnectedPeripheralFragment implements G
   // endregion
   // endregion
 
-
   // region Sensors
-
-  private Runnable mPeriodicallySendData = new Runnable()
-  {
-    @Override
-    public void run()
-    {
-      final String[] prefixes = {"!Q", "!A", "!G", "!M", "!L"};     // same order that kSensorType
-
-      for (int i = 0; i < mSensorData.length; i++)
-      {
-        SensorData sensorData = mSensorData[i];
-
-        if (sensorData.enabled && sensorData.values != null)
-        {
-          ByteBuffer buffer = ByteBuffer.allocate(2 + sensorData.values.length * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN);
-
-          // prefix
-          String prefix = prefixes[sensorData.sensorType];
-          buffer.put(prefix.getBytes());
-
-          // values
-          for (int j = 0; j < sensorData.values.length; j++)
-          {
-            buffer.putFloat(sensorData.values[j]);
-          }
-
-          byte[] result = buffer.array();
-          Log.d(TAG, "Send data for sensor: " + i);
-          sendCrcData(result);
-        }
-      }
-
-      sendDataHandler.postDelayed(this, kSendDataInterval);
-    }
-  };
 
   private void sendCrcData(byte[] data)
   {
@@ -923,19 +893,6 @@ public class ControllerFragment extends ConnectedPeripheralFragment implements G
     }
   }
 
-
-  private class SensorData
-  {
-    public int sensorType;
-    public float[] values;
-    public boolean enabled;
-  }
-
-
-  // endregion
-
-  // region SensorEventListener
-
   @Override
   public void onSensorChanged(SensorEvent event)
   {
@@ -966,8 +923,84 @@ public class ControllerFragment extends ConnectedPeripheralFragment implements G
   {
 
   }
+
+
   // endregion
 
+  // region ControllerColorPickerFragmentListener
+  @SuppressWarnings({"PointlessBitwiseExpression", "PointlessArithmeticExpression"})
+  @Override
+  public void onSendColorComponents(int color)
+  {
+    // Send selected color !Crgb
+    final byte r = (byte) ((color >> 16) & 0xFF);
+    final byte g = (byte) ((color >> 8) & 0xFF);
+    final byte b = (byte) ((color >> 0) & 0xFF);
+
+    ByteBuffer buffer = ByteBuffer.allocate(2 + 3 * 1).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+
+    // prefix
+    String prefix = "!C";
+    buffer.put(prefix.getBytes());
+
+    // values
+    buffer.put(r);
+    buffer.put(g);
+    buffer.put(b);
+
+    byte[] result = buffer.array();
+    sendCrcData(result);
+  }
+
+  // region ControllerPadFragmentListener
+  @Override
+  public void onSendControllerPadButtonStatus(int tag, boolean isPressed)
+  {
+    String data = "!B" + tag + (isPressed ? "1" : "0");
+    ByteBuffer buffer = ByteBuffer.allocate(data.length()).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+    buffer.put(data.getBytes());
+    sendCrcData(buffer.array());
+  }
+  // endregion
+
+  @Override
+  public void onUartRx(@NonNull byte[] data, @Nullable String peripheralIdentifier)
+  {
+    ControllerPadFragment controllerPadFragment = mWeakControllerPadFragment.get();
+    if (controllerPadFragment != null)
+    {
+      String dataString = BleUtils.bytesToText(data, true);
+      controllerPadFragment.addText(dataString);
+      mUartDataManager.removeRxCacheFirst(data.length, peripheralIdentifier);
+    }
+  }
+
+  // endregion
+
+  // region LocationCallback
+  // Create a WeakReference to LocationCallback to avoid memory leaks in GoogleServices: https://github.com/googlesamples/android-play-location/issues/26
+  private static class LocationCallbackReference extends LocationCallback
+  {
+
+    private WeakReference<LocationCallback> weakLocationCallback;
+
+    LocationCallbackReference(LocationCallback locationCallback)
+    {
+      weakLocationCallback = new WeakReference<>(locationCallback);
+    }
+
+    @Override
+    public void onLocationResult(LocationResult locationResult)
+    {
+      super.onLocationResult(locationResult);
+      if (weakLocationCallback.get() != null)
+      {
+        weakLocationCallback.get().onLocationResult(locationResult);
+      }
+    }
+  }
+
+  // endregion
 
   // region Adapter
   private static class ControllerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
@@ -981,8 +1014,7 @@ public class ControllerFragment extends ConnectedPeripheralFragment implements G
             R.string.controller_sensor_location
     };
     private static final int[] kModuleTitleKeys = {
-            R.string.controller_module_pad,
-            R.string.controller_module_colorpicker
+            R.string.controller_module_pad, R.string.controller_module_colorpicker
     };
 
     // Constants
@@ -992,94 +1024,6 @@ public class ControllerFragment extends ConnectedPeripheralFragment implements G
 
     private static final int kSensorDataCellsStartPosition = 1;
     private static final int kModuleCellsStartPosition = 1 + kNumSensorTypes + 1;
-
-    // Interface
-    interface Listener
-    {
-      void onSensorEnabled(int sensorId, boolean enabled);
-
-      void onModuleSelected(int moduleId);
-    }
-
-    // Data Structures
-    private class SectionViewHolder extends RecyclerView.ViewHolder
-    {
-      TextView titleTextView;
-
-      SectionViewHolder(View view)
-      {
-        super(view);
-        titleTextView = view.findViewById(R.id.titleTextView);
-      }
-    }
-
-    void notifySensorChanged(int sensorId)
-    {
-      notifyItemChanged(kSensorDataCellsStartPosition + sensorId);
-    }
-
-    private class SensorDataViewHolder extends RecyclerView.ViewHolder
-    {
-      TextView nameTextView;
-      SwitchCompat enabledSwitch;
-      private ViewGroup expandedViewGroup;
-      TextView value0TextView;
-      TextView value1TextView;
-      TextView value2TextView;
-      TextView value3TextView;
-      TextView[] textViews;
-
-      SensorDataViewHolder(View view)
-      {
-        super(view);
-        nameTextView = view.findViewById(R.id.nameTextView);
-        enabledSwitch = view.findViewById(R.id.enabledSwitch);
-        expandedViewGroup = view.findViewById(R.id.expandedViewGroup);
-        value0TextView = view.findViewById(R.id.value0TextView);
-        value1TextView = view.findViewById(R.id.value1TextView);
-        value2TextView = view.findViewById(R.id.value2TextView);
-        value3TextView = view.findViewById(R.id.value3TextView);
-        textViews = new TextView[]{value0TextView, value1TextView, value2TextView, value3TextView};
-      }
-
-      void animateExpanded()
-      {
-        final int index = getViewHolderId();
-        if (mSensorData[index].enabled)
-        {
-          AdapterUtils.expand(expandedViewGroup);
-        }
-        else
-        {
-          AdapterUtils.collapse(expandedViewGroup);
-        }
-      }
-
-      int getViewHolderId()
-      {
-        return getAdapterPosition() - kSensorDataCellsStartPosition;
-      }
-
-      boolean isExpanded()
-      {
-        final int position = getViewHolderId();
-        return mSensorData != null && mSensorData.length >= position && mSensorData[position].enabled;
-      }
-    }
-
-    private class ModuleViewHolder extends RecyclerView.ViewHolder
-    {
-      TextView nameTextView;
-      ViewGroup mainViewGroup;
-
-      ModuleViewHolder(View view)
-      {
-        super(view);
-        nameTextView = view.findViewById(R.id.nameTextView);
-        mainViewGroup = view.findViewById(R.id.mainViewGroup);
-      }
-    }
-
     // Data
     private Context mContext;
     private SensorData[] mSensorData;
@@ -1092,6 +1036,11 @@ public class ControllerFragment extends ConnectedPeripheralFragment implements G
       mContext = context.getApplicationContext();
       mSensorData = sensorData;
       mListener = listener;
+    }
+
+    void notifySensorChanged(int sensorId)
+    {
+      notifyItemChanged(kSensorDataCellsStartPosition + sensorId);
     }
 
     @Override
@@ -1252,64 +1201,95 @@ public class ControllerFragment extends ConnectedPeripheralFragment implements G
     {
       return 1 + kNumSensorTypes + 1 + kNumModules;
     }
-  }
 
-  // endregion
-
-
-  // region ControllerColorPickerFragmentListener
-  @SuppressWarnings({"PointlessBitwiseExpression", "PointlessArithmeticExpression"})
-  @Override
-  public void onSendColorComponents(int color)
-  {
-    // Send selected color !Crgb
-    final byte r = (byte) ((color >> 16) & 0xFF);
-    final byte g = (byte) ((color >> 8) & 0xFF);
-    final byte b = (byte) ((color >> 0) & 0xFF);
-
-    ByteBuffer buffer = ByteBuffer.allocate(2 + 3 * 1).order(java.nio.ByteOrder.LITTLE_ENDIAN);
-
-    // prefix
-    String prefix = "!C";
-    buffer.put(prefix.getBytes());
-
-    // values
-    buffer.put(r);
-    buffer.put(g);
-    buffer.put(b);
-
-    byte[] result = buffer.array();
-    sendCrcData(result);
-  }
-
-  // endregion
-
-
-  // region ControllerPadFragmentListener
-  @Override
-  public void onSendControllerPadButtonStatus(int tag, boolean isPressed)
-  {
-    String data = "!B" + tag + (isPressed ? "1" : "0");
-    ByteBuffer buffer = ByteBuffer.allocate(data.length()).order(java.nio.ByteOrder.LITTLE_ENDIAN);
-    buffer.put(data.getBytes());
-    sendCrcData(buffer.array());
-  }
-  // endregion
-
-  // region UartDataManagerListener
-
-  @Override
-  public void onUartRx(@NonNull byte[] data, @Nullable String peripheralIdentifier)
-  {
-    ControllerPadFragment controllerPadFragment = mWeakControllerPadFragment.get();
-    if (controllerPadFragment != null)
+    // Interface
+    interface Listener
     {
-      String dataString = BleUtils.bytesToText(data, true);
-      controllerPadFragment.addText(dataString);
-      mUartDataManager.removeRxCacheFirst(data.length, peripheralIdentifier);
+      void onSensorEnabled(int sensorId, boolean enabled);
+
+      void onModuleSelected(int moduleId);
+    }
+
+    // Data Structures
+    private class SectionViewHolder extends RecyclerView.ViewHolder
+    {
+      TextView titleTextView;
+
+      SectionViewHolder(View view)
+      {
+        super(view);
+        titleTextView = view.findViewById(R.id.titleTextView);
+      }
+    }
+
+    private class SensorDataViewHolder extends RecyclerView.ViewHolder
+    {
+      TextView nameTextView;
+      SwitchCompat enabledSwitch;
+      TextView value0TextView;
+      TextView value1TextView;
+      TextView value2TextView;
+      TextView value3TextView;
+      TextView[] textViews;
+      private ViewGroup expandedViewGroup;
+
+      SensorDataViewHolder(View view)
+      {
+        super(view);
+        nameTextView = view.findViewById(R.id.nameTextView);
+        enabledSwitch = view.findViewById(R.id.enabledSwitch);
+        expandedViewGroup = view.findViewById(R.id.expandedViewGroup);
+        value0TextView = view.findViewById(R.id.value0TextView);
+        value1TextView = view.findViewById(R.id.value1TextView);
+        value2TextView = view.findViewById(R.id.value2TextView);
+        value3TextView = view.findViewById(R.id.value3TextView);
+        textViews = new TextView[]{value0TextView, value1TextView, value2TextView, value3TextView};
+      }
+
+      void animateExpanded()
+      {
+        final int index = getViewHolderId();
+        if (mSensorData[index].enabled)
+        {
+          AdapterUtils.expand(expandedViewGroup);
+        }
+        else
+        {
+          AdapterUtils.collapse(expandedViewGroup);
+        }
+      }
+
+      int getViewHolderId()
+      {
+        return getAdapterPosition() - kSensorDataCellsStartPosition;
+      }
+
+      boolean isExpanded()
+      {
+        final int position = getViewHolderId();
+        return mSensorData != null && mSensorData.length >= position && mSensorData[position].enabled;
+      }
+    }
+
+    private class ModuleViewHolder extends RecyclerView.ViewHolder
+    {
+      TextView nameTextView;
+      ViewGroup mainViewGroup;
+
+      ModuleViewHolder(View view)
+      {
+        super(view);
+        nameTextView = view.findViewById(R.id.nameTextView);
+        mainViewGroup = view.findViewById(R.id.mainViewGroup);
+      }
     }
   }
-
   // endregion
 
+  private class SensorData
+  {
+    public int sensorType;
+    public float[] values;
+    public boolean enabled;
+  }
 }
