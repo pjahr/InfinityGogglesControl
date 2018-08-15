@@ -43,7 +43,7 @@
     PIN                       Which pin on the Arduino is connected to the NeoPixels?
     NUMPIXELS                 How many NeoPixels are attached to the Arduino?
     -----------------------------------------------------------------------*/
-    #define FACTORYRESET_ENABLE     0
+    #define FACTORYRESET_ENABLE     1
 
     #define PIN                     6
     #define NUMPIXELS               60
