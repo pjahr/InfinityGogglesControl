@@ -956,9 +956,17 @@ public class ControllerFragment extends ConnectedPeripheralFragment implements G
   @Override
   public void onSendControllerPadButtonStatus(int tag, boolean isPressed)
   {
-    String data = "!B" + tag + (isPressed ? "1" : "0");
-    ByteBuffer buffer = ByteBuffer.allocate(data.length()).order(java.nio.ByteOrder.LITTLE_ENDIAN);
-    buffer.put(data.getBytes());
+    final byte id = (byte) ((tag >> 0) & 0xFF);
+
+    ByteBuffer buffer = ByteBuffer.allocate(2 + 1*1).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+
+    // prefix
+    String prefix = "!A";
+    buffer.put(prefix.getBytes());
+
+    // values
+    buffer.put(id);
+
     sendCrcData(buffer.array());
   }
   // endregion

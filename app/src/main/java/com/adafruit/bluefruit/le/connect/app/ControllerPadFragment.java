@@ -19,6 +19,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 
@@ -53,10 +54,7 @@ public class ControllerPadFragment extends Fragment
 
   // UI
   private ViewGroup _contentView;
-  private EditText _bufferTextView;
   private ViewGroup _rootLayout;
-  private View _topSpacerView;
-  private View _bottomSpacerView;
 
   // Data
   private ControllerPadFragmentListener _listener;
@@ -74,13 +72,6 @@ public class ControllerPadFragment extends Fragment
       {
         view.setPressed(true);
         _listener.onSendControllerPadButtonStatus(tag, true);
-        return true;
-      }
-      else if (event.getAction() == MotionEvent.ACTION_UP)
-      {
-        view.setPressed(false);
-        _listener.onSendControllerPadButtonStatus(tag, false);
-        view.performClick();
         return true;
       }
       return false;
@@ -137,33 +128,34 @@ public class ControllerPadFragment extends Fragment
 
     // UI
     _rootLayout = view.findViewById(R.id.rootLayout);
-    _topSpacerView = view.findViewById(R.id.topSpacerView);
-    _bottomSpacerView = view.findViewById(R.id.bottomSpacerView);
 
-    _contentView = view.findViewById(R.id.contentView);
-    _bufferTextView = view.findViewById(R.id.bufferTextView);
-    if (_bufferTextView != null)
-    {
-      _bufferTextView.setKeyListener(null);     // make it not editable
-    }
+    Button buttonA0  = view.findViewById(R.id.button0);
+    Button buttonA1  = view.findViewById(R.id.button1);
+    Button buttonA2  = view.findViewById(R.id.button2);
+    Button buttonA3  = view.findViewById(R.id.button3);
+    Button buttonA4  = view.findViewById(R.id.button4);
+    Button buttonA5  = view.findViewById(R.id.button5);
+    Button buttonA6  = view.findViewById(R.id.button6);
+    Button buttonA7  = view.findViewById(R.id.button7);
+    Button buttonA8  = view.findViewById(R.id.button8);
+    Button buttonA9  = view.findViewById(R.id.button9);
+    Button buttonA10 = view.findViewById(R.id.button10);
+    Button buttonA11 = view.findViewById(R.id.button11);
 
-    ImageButton upArrowImageButton = view.findViewById(R.id.upArrowImageButton);
-    upArrowImageButton.setOnTouchListener(_padButtonTouchListener);
-    ImageButton leftArrowImageButton = view.findViewById(R.id.leftArrowImageButton);
-    leftArrowImageButton.setOnTouchListener(_padButtonTouchListener);
-    ImageButton rightArrowImageButton = view.findViewById(R.id.rightArrowImageButton);
-    rightArrowImageButton.setOnTouchListener(_padButtonTouchListener);
-    ImageButton bottomArrowImageButton = view.findViewById(R.id.bottomArrowImageButton);
-    bottomArrowImageButton.setOnTouchListener(_padButtonTouchListener);
 
-    ImageButton button1ImageButton = view.findViewById(R.id.button1ImageButton);
-    button1ImageButton.setOnTouchListener(_padButtonTouchListener);
-    ImageButton button2ImageButton = view.findViewById(R.id.button2ImageButton);
-    button2ImageButton.setOnTouchListener(_padButtonTouchListener);
-    ImageButton button3ImageButton = view.findViewById(R.id.button3ImageButton);
-    button3ImageButton.setOnTouchListener(_padButtonTouchListener);
-    ImageButton button4ImageButton = view.findViewById(R.id.button4ImageButton);
-    button4ImageButton.setOnTouchListener(_padButtonTouchListener);
+    buttonA0.setOnTouchListener(_padButtonTouchListener);
+    buttonA1.setOnTouchListener(_padButtonTouchListener);
+    buttonA2.setOnTouchListener(_padButtonTouchListener);
+    buttonA3.setOnTouchListener(_padButtonTouchListener);
+    buttonA4.setOnTouchListener(_padButtonTouchListener);
+    buttonA5.setOnTouchListener(_padButtonTouchListener);
+    buttonA6.setOnTouchListener(_padButtonTouchListener);
+    buttonA7.setOnTouchListener(_padButtonTouchListener);
+    buttonA8.setOnTouchListener(_padButtonTouchListener);
+    buttonA9.setOnTouchListener(_padButtonTouchListener);
+    buttonA10.setOnTouchListener(_padButtonTouchListener);
+    buttonA11.setOnTouchListener(_padButtonTouchListener);
+
 
     // Read shared preferences
     _maxPacketsToPaintAsText = UartBaseFragment.kDefaultMaxPacketsToPaintAsText; //PreferencesFragment.getUartTextMaxPackets(this);
@@ -205,7 +197,6 @@ public class ControllerPadFragment extends Fragment
       @Override
       public void onGlobalLayout()
       {
-        adjustAspectRatio();
         _rootLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
       }
     });
@@ -276,33 +267,6 @@ public class ControllerPadFragment extends Fragment
 
   // region UI
 
-  private void adjustAspectRatio()
-  {
-    ViewGroup rootLayout = _contentView;
-    final int mainWidth = rootLayout.getWidth();
-
-    if (mainWidth > 0)
-    {
-      final int mainHeight = rootLayout.getHeight() - _topSpacerView.getLayoutParams().height - _bottomSpacerView.getLayoutParams().height;
-      if (mainHeight > 0)
-      {
-        // Add black bars if aspect ratio is below min
-        final float aspectRatio = mainWidth / (float) mainHeight;
-        if (aspectRatio < MinAspectRatio)
-        {
-          final int spacerHeight = Math.round(mainHeight - mainWidth / MinAspectRatio);
-          ViewGroup.LayoutParams topLayoutParams = _topSpacerView.getLayoutParams();
-          topLayoutParams.height = spacerHeight / 2;
-          _topSpacerView.setLayoutParams(topLayoutParams);
-
-          ViewGroup.LayoutParams bottomLayoutParams = _bottomSpacerView.getLayoutParams();
-          bottomLayoutParams.height = spacerHeight / 2;
-          _bottomSpacerView.setLayoutParams(bottomLayoutParams);
-        }
-      }
-    }
-  }
-
   public synchronized void addText(String text)
   {
     _dataBuffer.append(text);
@@ -333,9 +297,6 @@ public class ControllerPadFragment extends Fragment
       }
 
       _dataBufferLastSize = _dataBuffer.length();
-      _bufferTextView.setText(_textSpanBuffer);
-      _bufferTextView.setSelection(0,
-                                   _textSpanBuffer.length());        // to automatically scroll to the end
     }
   }
   // endregion

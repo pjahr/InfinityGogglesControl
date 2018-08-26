@@ -33,6 +33,22 @@ void SimpleEigth()
    }
 }
 
+void FadeEigth()
+{  
+  for(int i = 0; i < NUM_LEDS; i++)
+  { 
+    int dot0 = Order8[i];
+    
+    leds[dot0] = CRGB::Green;
+    
+    FastLED.show();
+    
+    // clear this led for the next time around the loop
+    leds[dot0] = CRGB::Black;
+    delay(60);
+   }
+}
+
 void CircleHardwareOrder()
 {
   for(int dot = 0; dot < NUM_LEDS; dot++)
@@ -47,13 +63,6 @@ void CircleHardwareOrder()
    }
 }
 
-CRGB getColorForIndex(int i)
-{
-  if (i==0) return CRGB::Red;
-  if (i==8) return CRGB::Orange;
-  return CRGB::Blue;
-}
-
 void LightAll(CRGB color)
 {
   for(int dot = 0; dot < NUM_LEDS; dot++)
@@ -62,3 +71,28 @@ void LightAll(CRGB color)
   }
   FastLED.show();
 }
+
+///[Helper]|||||||||||||||||||||||||||||||||||||||||||||||||
+
+
+CRGB getColorForIndex(int i)
+{
+  if (i==0) return CRGB::Red;
+  if (i==8) return CRGB::Orange;
+  return CRGB::Blue;
+}
+
+// Python-esc modulo.
+int m(int a, int b)
+{
+  int c = a % b;
+  if (c < 0)  { c += b; }
+  return c;
+}
+
+// Shortcut for modulo 16.
+int m16(int x)
+{
+  return m(x, 16);
+}
+

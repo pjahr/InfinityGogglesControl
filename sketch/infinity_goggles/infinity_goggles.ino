@@ -46,13 +46,11 @@
     #define FACTORYRESET_ENABLE     1
 
     #define PIN                     6
-    #define NUMPIXELS               60
+    #define NUMPIXELS               16
 /*=========================================================================*/
 
 Adafruit_NeoPixel pixel = Adafruit_NeoPixel(NUMPIXELS, PIN);
 Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
-
-
 
 // function prototypes over in packetparser.cpp
 uint8_t readPacket(Adafruit_BLE *ble, uint16_t timeout);
@@ -71,6 +69,7 @@ extern uint8_t packetbuffer[];
 /**************************************************************************/
 void setup(void)
 {
+  delay(3000);
   // turn off neopixel
   pixel.begin(); // This initializes the NeoPixel library.
   for(uint8_t i=0; i<NUMPIXELS; i++) {
@@ -119,7 +118,11 @@ void loop(void)
   if (len == 0) return;
 
   /* Got a packet! */
-  // printHex(packetbuffer, len);
+  for(int i=0; i<len; i++)
+  {
+    Serial.print((char)packetbuffer[i]);
+  }
+  Serial.println();
 
   // Color
   if (packetbuffer[1] == 'C') {
