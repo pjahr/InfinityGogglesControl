@@ -17,7 +17,7 @@
 #define ColorOrder      RGB        // in use?
 #define LedStripType    NEOPIXEL
 #define MaxBrightness   255        // full power
-#define FramesPerSecond 60
+#define FramesPerSecond 120
 
 // related to Fire2012
 #define CoolingFactor  55
@@ -32,6 +32,7 @@ int Order8[16]={0,1,2,3,4,5,6,7,15,14,13,12,11,10,9,8};
 
 CRGB     _leds[NumberOfPixels];
 CRGB     _baseColor;
+uint8_t  _baseColorHue = 180;
 
 uint16_t _currentFrame = 0;         // INFO: move this variable to the void loop() scope and save some CPU ?
 uint16_t _animationSpeed = 100;     // number of frames to increment per loop
@@ -109,27 +110,17 @@ void RunCurrentAnimation()
 {
   switch(_currentAnimation)
   {
-    case 1: RingPair    (_leds, _currentFrame); break;
-    case 2: DoubleChaser(_leds, _currentFrame); break;
-    case 3: TripleBounce(_leds, _currentFrame); break;
-    case 4: WaveInt     (_leds, _currentFrame, 180); break;
-    case 5: Wave        (_leds, _currentFrame, 180); break;
-    case 6: Spark       (_leds, _currentFrame, 255, 188); break;
-            // Blue spark (Slow)
-            // Overloaded version of "Spark" with Hue value, 255 for fade is the slowest fade possible. 256 is on/off
-            //Slow things down a bit more for Slow Spark
+    case 1: RingPair    (_currentFrame); break;
+    case 2: DoubleChaser(_currentFrame); break;
+    case 3: TripleBounce(_currentFrame); break;
+    case 4: WaveInt     (_leds, _currentFrame, _baseColorHue); break;
+    case 5: Wave        (_leds, _currentFrame, _baseColorHue); break;
+    case 6: Spark       (_leds, _currentFrame, 255, _baseColorHue); break; // Overloaded version of "Spark" with Hue value, 255 for fade is the slowest fade possible. 256 is on/off
+    case 7: Spark       (_leds, _currentFrame, 246, _baseColorHue);break; //Overloaded version of "Spark" with Hue value, 246 fade is faster which makes for a sharper dropoff
+    case 8: Spark       (_leds, _currentFrame, 255); break;               //"Spark" function without hue make a white spark, 255 for fade is the slowest fade possible.
+    case 9: Spark       (_leds, _currentFrame, 245); break;           //"Spark" function without hue make a white spark, 246 fade is faster which makes for a sharper dropoff      
       
-    case 7: Spark       (_leds,_currentFrame,246,188);break; //Blue spark (fast)
-            //Overloaded version of "Spark" with Hue value, 246 fade is faster which makes for a sharper dropoff
-    case 8: Spark       (_leds,_currentFrame,255);break;//White spark (Slow)
-            //"Spark" function without hue make a white spark, 255 for fade is the slowest fade possible.
-            //Slow things down a bit more for Slow Spark
-    case 9: Spark       (_leds,_currentFrame,245); break;
-            //White spark (fast)      
-            //"Spark" function without hue make a white spark, 246 fade is faster which makes for a sharper dropoff      
-      
-    case 10: RainbowSpark(_leds,_currentFrame,240); break;   
-            //240 for dropoff is a pretty sharp fade, good for this _currentAnimation
+    case 10: RainbowSpark(_leds,_currentFrame, 240); break;            //240 for dropoff is a pretty sharp fade, good for this _currentAnimation
     
     case 11: rainbow(); break;
     
@@ -142,6 +133,8 @@ void RunCurrentAnimation()
     case 15: juggle(); break;
     
     case 16: bpm(); break;
+
+    case 17: Fire2012(); break;
     
     default: FastLED.clear();
       delay(100); //Animation OFF
@@ -187,34 +180,37 @@ void ChangeBaseColor()
   Serial.println(blue, HEX);
 
   _baseColor.setRGB( red, green, blue);
+  _baseColorHue=rgb2hsv_approximate(_baseColor).h;
 }
 
-void TripleBounce(CRGB strip[], uint16_t frame)   //3 chaser _currentAnimations offset by 120 degrees each
+void TripleBounce(uint16_t frame)   //3 chaser animations offset by 120 degrees each
 {
   FastLED.clear();    //Clear previous buffer
-  Bounce(strip,frame,0);
-  Bounce(strip,frame+(IntMax/3),100);
-  Bounce(strip,frame+(IntMax/3)*2,150);
+  Bounce(frame,0);
+  Bounce(frame+(IntMax/3),100);
+  Bounce(frame+(IntMax/3)*2,150);
 }
 
-void DoubleChaser(CRGB strip[], uint16_t frame)   //2 chaser _currentAnimations offset 180 degrees
+void DoubleChaser(uint16_t frame)   //2 chaser animations offset 180 degrees
 {
   FastLED.clear();    //Clear previous buffer
   frame = frame * 2;
-  Ring(strip, frame, 0);
-  Ring(strip, frame + (IntMax / 2), 150);
+  Ring(frame, 0);
+  Ring(frame + (IntMax / 2), 150);
 }
 
-void RingPair(CRGB strip[], uint16_t frame)     //2 rings _currentAnimations at inverse phases
+void RingPair(uint16_t frame)     //2 rings animations at inverse phases
 {
   FastLED.clear();    //Clear previous buffer
-  Ring(strip, frame, 30);
-  Ring(strip, IntMax - frame, 150);
+  Ring(frame, 30);
+  Ring(IntMax - frame, 150);
 }
 
 
-void RainbowSpark(CRGB targetStrip[], uint16_t _currentAnimationFrame,uint8_t fade){    //Color spark where hue is function of frame
-  Spark(targetStrip,_currentAnimationFrame,fade,_currentAnimationFrame/255);
+void RainbowSpark(CRGB targetStrip[], uint16_t _currentAnimationFrame,uint8_t fade)
+{
+  // Color spark where hue is function of frame
+  Spark(targetStrip, _currentAnimationFrame, fade, _currentAnimationFrame/255);
 }
 
 void SimpleEigth()
@@ -269,7 +265,7 @@ void LightAll(CRGB color)
 // Linear "Larson scanner" (or knight rider effect) with anti-aliasing
 // Color is determined by "hue"
 //*****************************************************************
-void Bounce(CRGB targetStrip[], uint16_t frame, uint8_t hue)
+void Bounce(uint16_t frame, uint8_t hue)
 {
   uint16_t pos16;
   if (frame < (IntMax / 2))
@@ -281,7 +277,7 @@ void Bounce(CRGB targetStrip[], uint16_t frame, uint8_t hue)
   }
 
   int position = map(pos16, 0, IntMax, 0, ((NumberOfPixels) * 16));
-  drawFractionalBar(targetStrip, position, 3, hue,0);
+  drawFractionalBar(_leds, position, 3, hue,0);
 }
 
 
@@ -291,11 +287,11 @@ void Bounce(CRGB targetStrip[], uint16_t frame, uint8_t hue)
 // Anti-aliased cyclical chaser, 3 pixels wide
 // Color is determined by "hue"
 //*****************************************************
-void Ring(CRGB targetStrip[], uint16_t frame, uint8_t hue)
+void Ring(uint16_t frame, uint8_t hue)
 {
   uint8_t stripLength = sizeof(_leds)/sizeof(CRGB);
   int pos16 = map(frame, 0, IntMax, 0, ((stripLength) * 16));
-  drawFractionalBar(targetStrip, pos16, 3, hue,1);
+  drawFractionalBar(_leds, pos16, 3, hue,1);
 }
 
 //***************************   Wave [Float Math]  *******************************
@@ -349,7 +345,7 @@ void WaveInt(CRGB targetStrip[], uint16_t frame, uint8_t hue){
 // fade = 256 means no dropoff, pixels are on or off
 // NOTE: this _currentAnimation doesnt clear the previous buffer because the fade/dropoff is a function of the previous LED state
 //***********************************************************************************
-void Spark(CRGB targetStrip[], uint16_t _currentAnimationFrame,uint8_t fade, uint8_t hue)
+void Spark(CRGB targetStrip[], uint16_t _currentAnimationFrame, uint8_t fade, uint8_t hue)
 {
   uint8_t stripLength = sizeof(_leds)/sizeof(CRGB);
   uint16_t rand = random16();
