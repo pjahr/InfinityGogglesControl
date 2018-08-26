@@ -141,7 +141,15 @@ public class ControllerPadFragment extends Fragment
     Button buttonA9  = view.findViewById(R.id.button9);
     Button buttonA10 = view.findViewById(R.id.button10);
     Button buttonA11 = view.findViewById(R.id.button11);
-
+    Button buttonA12 = view.findViewById(R.id.button12);
+    Button buttonA13 = view.findViewById(R.id.button13);
+    Button buttonA14 = view.findViewById(R.id.button14);
+    Button buttonA15 = view.findViewById(R.id.button15);
+    Button buttonA16 = view.findViewById(R.id.button16);
+    Button buttonA17 = view.findViewById(R.id.button17);
+    Button buttonA18 = view.findViewById(R.id.button18);
+    Button buttonA19 = view.findViewById(R.id.button19);
+    Button buttonA20 = view.findViewById(R.id.button20);
 
     buttonA0.setOnTouchListener(_padButtonTouchListener);
     buttonA1.setOnTouchListener(_padButtonTouchListener);
@@ -155,6 +163,15 @@ public class ControllerPadFragment extends Fragment
     buttonA9.setOnTouchListener(_padButtonTouchListener);
     buttonA10.setOnTouchListener(_padButtonTouchListener);
     buttonA11.setOnTouchListener(_padButtonTouchListener);
+    buttonA12.setOnTouchListener(_padButtonTouchListener);
+    buttonA13.setOnTouchListener(_padButtonTouchListener);
+    buttonA14.setOnTouchListener(_padButtonTouchListener);
+    buttonA15.setOnTouchListener(_padButtonTouchListener);
+    buttonA16.setOnTouchListener(_padButtonTouchListener);
+    buttonA17.setOnTouchListener(_padButtonTouchListener);
+    buttonA18.setOnTouchListener(_padButtonTouchListener);
+    buttonA19.setOnTouchListener(_padButtonTouchListener);
+    buttonA20.setOnTouchListener(_padButtonTouchListener);
 
 
     // Read shared preferences

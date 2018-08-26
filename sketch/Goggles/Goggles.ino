@@ -35,7 +35,7 @@ CRGB     _baseColor;
 
 uint16_t _currentFrame = 0;         // INFO: move this variable to the void loop() scope and save some CPU ?
 uint16_t _animationSpeed = 100;     // number of frames to increment per loop
-uint8_t  _currentAnimation = 8;
+uint8_t  _currentAnimation = 0;
 uint8_t  _brightness = 50;          //Global brightness percentage -IN USE?
 bool     _reverseDirection = false; // INFO: currently constant
 
@@ -91,7 +91,7 @@ void SetupBleModule()
   {
       delay(500);
   }
-  
+  Serial.println("Connectin established");
   ble.setMode(BLUEFRUIT_MODE_DATA); // set mode to DATA
 }
 
@@ -101,7 +101,6 @@ void SetupBleModule()
 void setup(void)
 {
   delay(3000);
-
   SetupFastLed();
   SetupBleModule();  
 }
@@ -110,28 +109,40 @@ void RunCurrentAnimation()
 {
   switch(_currentAnimation)
   {
-    case 1: RingPair(_leds, _currentFrame); break;
-    case 2: DoubleChaser(_leds,_currentFrame); break;
-    case 3: TripleBounce(_leds,_currentFrame); break;
-    case 4: WaveInt(_leds,_currentFrame,180); break;
-    case 5: Wave(_leds,_currentFrame,180); break;
-    case 6: Spark(_leds,_currentFrame,255,188);delay(2); break;
+    case 1: RingPair    (_leds, _currentFrame); break;
+    case 2: DoubleChaser(_leds, _currentFrame); break;
+    case 3: TripleBounce(_leds, _currentFrame); break;
+    case 4: WaveInt     (_leds, _currentFrame, 180); break;
+    case 5: Wave        (_leds, _currentFrame, 180); break;
+    case 6: Spark       (_leds, _currentFrame, 255, 188); break;
             // Blue spark (Slow)
             // Overloaded version of "Spark" with Hue value, 255 for fade is the slowest fade possible. 256 is on/off
             //Slow things down a bit more for Slow Spark
       
-    case 7: Spark(_leds,_currentFrame,246,188);break; //Blue spark (fast)
+    case 7: Spark       (_leds,_currentFrame,246,188);break; //Blue spark (fast)
             //Overloaded version of "Spark" with Hue value, 246 fade is faster which makes for a sharper dropoff
-    case 8: Spark(_leds,_currentFrame,255);delay(2);break;//White spark (Slow)
+    case 8: Spark       (_leds,_currentFrame,255);break;//White spark (Slow)
             //"Spark" function without hue make a white spark, 255 for fade is the slowest fade possible.
             //Slow things down a bit more for Slow Spark
-    case 9: Spark(_leds,_currentFrame,245); break;
+    case 9: Spark       (_leds,_currentFrame,245); break;
             //White spark (fast)      
-            //"Spark" function without hue make a white spark, 246 fade is faster which makes for a sharper dropoff
-      
+            //"Spark" function without hue make a white spark, 246 fade is faster which makes for a sharper dropoff      
       
     case 10: RainbowSpark(_leds,_currentFrame,240); break;   
             //240 for dropoff is a pretty sharp fade, good for this _currentAnimation
+    
+    case 11: rainbow(); break;
+    
+    case 12: rainbowWithGlitter(); break;
+    
+    case 13: confetti(); break;
+    
+    case 14: sinelon(); break;
+    
+    case 15: juggle(); break;
+    
+    case 16: bpm(); break;
+    
     default: FastLED.clear();
       delay(100); //Animation OFF
   }
@@ -164,9 +175,9 @@ void ChangeCurrentAnimation()
 
 void ChangeBaseColor()
 {
-  uint8_t red = _packetbuffer[2];
+  uint8_t red   = _packetbuffer[2];
   uint8_t green = _packetbuffer[3];
-  uint8_t blue = _packetbuffer[4];
+  uint8_t blue  = _packetbuffer[4];
   Serial.print("RGB #");
   if (red < 0x10) Serial.print("0");
   Serial.print(red, HEX);
@@ -204,7 +215,6 @@ void RingPair(CRGB strip[], uint16_t frame)     //2 rings _currentAnimations at 
 
 void RainbowSpark(CRGB targetStrip[], uint16_t _currentAnimationFrame,uint8_t fade){    //Color spark where hue is function of frame
   Spark(targetStrip,_currentAnimationFrame,fade,_currentAnimationFrame/255);
-  delay(20);
 }
 
 void SimpleEigth()
@@ -213,13 +223,9 @@ void SimpleEigth()
   { 
     int dot = Order8[i];
     
-    _leds[dot] = CRGB::Green;
-    
-    FastLED.show();
-    
+    _leds[dot] = CRGB::Green;    
     // clear this led for the next time around the loop
     _leds[dot] = CRGB::Black;
-    delay(60);
    }
 }
 
@@ -233,7 +239,6 @@ void CircleHardwareOrder()
       
       // clear this led for the next time around the loop
       _leds[dot] = CRGB::Black;
-      delay(30);
    }
 }
 
@@ -264,15 +269,15 @@ void LightAll(CRGB color)
 // Linear "Larson scanner" (or knight rider effect) with anti-aliasing
 // Color is determined by "hue"
 //*****************************************************************
-void Bounce(CRGB targetStrip[], uint16_t _currentAnimationFrame, uint8_t hue)
+void Bounce(CRGB targetStrip[], uint16_t frame, uint8_t hue)
 {
   uint16_t pos16;
-  if (_currentAnimationFrame < (IntMax / 2))
+  if (frame < (IntMax / 2))
   {
-    pos16 = _currentAnimationFrame * 2;
+    pos16 = frame * 2;
   
   }else{
-    pos16 = IntMax - ((_currentAnimationFrame - (IntMax/2))*2);
+    pos16 = IntMax - ((frame - (IntMax/2))*2);
   }
 
   int position = map(pos16, 0, IntMax, 0, ((NumberOfPixels) * 16));
@@ -286,10 +291,10 @@ void Bounce(CRGB targetStrip[], uint16_t _currentAnimationFrame, uint8_t hue)
 // Anti-aliased cyclical chaser, 3 pixels wide
 // Color is determined by "hue"
 //*****************************************************
-void Ring(CRGB targetStrip[], uint16_t _currentAnimationFrame, uint8_t hue)
+void Ring(CRGB targetStrip[], uint16_t frame, uint8_t hue)
 {
   uint8_t stripLength = sizeof(_leds)/sizeof(CRGB);
-  int pos16 = map(_currentAnimationFrame, 0, IntMax, 0, ((stripLength) * 16));
+  int pos16 = map(frame, 0, IntMax, 0, ((stripLength) * 16));
   drawFractionalBar(targetStrip, pos16, 3, hue,1);
 }
 
@@ -299,14 +304,14 @@ void Ring(CRGB targetStrip[], uint16_t _currentAnimationFrame, uint8_t hue)
 // Squeezing achieved by using an exponential (^8) sin value
 // Color is determined by "hue"
 //***********************************************************************************
-void Wave(CRGB targetStrip[], uint16_t _currentAnimationFrame, uint8_t hue){
+void Wave(CRGB targetStrip[], uint16_t frame, uint8_t hue){
   FastLED.clear();    //Clear previous buffer
   float deg; 
   float value; 
   uint8_t stripLength = sizeof(_leds)/sizeof(CRGB);
   for(uint8_t i=0;i<stripLength;i++)
   {
-    deg=float(_currentAnimationFrame+((IntMax/stripLength)*i))/(float(IntMax)) * 360.0;
+    deg=float(frame+((IntMax/stripLength)*i))/(float(IntMax)) * 360.0;
     value = pow(sin(radians(deg)),8);    //Squeeeeeeze
 
     if(value>=0){   //Chop sine wave (no negative values)
@@ -322,13 +327,13 @@ void Wave(CRGB targetStrip[], uint16_t _currentAnimationFrame, uint8_t hue){
 // Since im stuck with integer values, exponential wave-forming is not possible (unless i'm wrong???)
 // Color is determined by "hue"
 //***********************************************************************************
-void WaveInt(CRGB targetStrip[], uint16_t _currentAnimationFrame, uint8_t hue){
+void WaveInt(CRGB targetStrip[], uint16_t frame, uint8_t hue){
   FastLED.clear();
   uint8_t stripLength = sizeof(_leds)/sizeof(CRGB);
   uint8_t value;
   for(uint8_t i=0;i<stripLength;i++)
   {
-    value=(sin16(_currentAnimationFrame+((IntMax/stripLength)*i)) + (IntMax/2))/256;   
+    value=(sin16(frame+((IntMax/stripLength)*i)) + (IntMax/2))/256;   
     if(value>=0){   
       targetStrip[i] += CHSV(hue,255,value);
     }
@@ -532,19 +537,16 @@ void drawFractionalBar(CRGB targetStrip[], int pos16, int width, uint8_t hue, bo
 /**************************************************************************/
 void loop(void)
 {
-  char command = GetCommandFromBleModule();
-
-  switch (command)
-  {
-    case 'A': ChangeCurrentAnimation(); break;
-    case 'C': ChangeBaseColor(); break;
-    default: return;
-  } 
-
+  
+  
   RunCurrentAnimation();
   
-  FastLED.show();         //All _currentAnimations are applied!..send the results to the strip(s)
+  FastLED.show();         //All animations are applied!..send the results to the strip(s)
   _currentFrame += _animationSpeed;
+  Serial.print('F');
+  Serial.println(_currentFrame);
+  FastLED.delay(1000/FramesPerSecond);
+  EVERY_N_MILLISECONDS( 20 ) { gHue++; }
   
   // // Call the current pattern function once, updating the 'leds' array
   // gPatterns[gCurrentPatternNumber]();
@@ -557,5 +559,12 @@ void loop(void)
   // // do some periodic updates
   // EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
   // EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
-    
+  
+  char command = GetCommandFromBleModule();
+
+  switch (command)
+  {
+    case 'A': ChangeCurrentAnimation(); break;
+    case 'C': ChangeBaseColor(); break;
+  } 
 }

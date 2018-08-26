@@ -144,6 +144,96 @@
                 android:text="A 11"
                 android:textAlignment="viewStart" />
 
+            <Button
+                android:id="@+id/button12"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableLeft="@drawable/pad_button_numbers_2"
+                android:scaleType="centerInside"
+                android:tag="12"
+                android:text="A 12"
+                android:textAlignment="viewStart" />
+
+            <Button
+                android:id="@+id/button13"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableLeft="@drawable/pad_button_numbers_2"
+                android:scaleType="centerInside"
+                android:tag="13"
+                android:text="A 13"
+                android:textAlignment="viewStart" />
+
+            <Button
+                android:id="@+id/button14"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableLeft="@drawable/pad_button_numbers_2"
+                android:scaleType="centerInside"
+                android:tag="14"
+                android:text="A 14"
+                android:textAlignment="viewStart" />
+
+            <Button
+                android:id="@+id/button15"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableLeft="@drawable/pad_button_numbers_2"
+                android:scaleType="centerInside"
+                android:tag="15"
+                android:text="A 15"
+                android:textAlignment="viewStart" />
+
+            <Button
+                android:id="@+id/button16"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableLeft="@drawable/pad_button_numbers_2"
+                android:scaleType="centerInside"
+                android:tag="16"
+                android:text="A 16"
+                android:textAlignment="viewStart" />
+
+            <Button
+                android:id="@+id/button17"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableLeft="@drawable/pad_button_numbers_2"
+                android:scaleType="centerInside"
+                android:tag="17"
+                android:text="A 17"
+                android:textAlignment="viewStart" />
+
+            <Button
+                android:id="@+id/button18"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableLeft="@drawable/pad_button_numbers_2"
+                android:scaleType="centerInside"
+                android:tag="18"
+                android:text="A 18"
+                android:textAlignment="viewStart" />
+
+            <Button
+                android:id="@+id/button19"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableLeft="@drawable/pad_button_numbers_2"
+                android:scaleType="centerInside"
+                android:tag="19"
+                android:text="A 19"
+                android:textAlignment="viewStart" />
+
+            <Button
+                android:id="@+id/button20"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableLeft="@drawable/pad_button_numbers_2"
+                android:scaleType="centerInside"
+                android:tag="20"
+                android:text="A 20"
+                android:textAlignment="viewStart" />
+
 
         </LinearLayout>
 
