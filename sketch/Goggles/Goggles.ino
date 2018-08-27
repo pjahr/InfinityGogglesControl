@@ -9,7 +9,6 @@
 #include "BluefruitConfig.h"
 #include "FastLED.h"
 
-
 #define ResetBleModule  1
 #define DataPin         6
 #define NumberOfPixels  16
@@ -28,16 +27,14 @@
 
 /*=========================================================================*/
 
-int Order8[16]={0,1,2,3,4,5,6,7,15,14,13,12,11,10,9,8};
-
 CRGB     _leds[NumberOfPixels];
 CRGB     _baseColor;
 uint8_t  _baseColorHue = 180;
 
-uint16_t _currentFrame = 0;         // INFO: move this variable to the void loop() scope and save some CPU ?
-uint16_t _animationSpeed = 100;     // number of frames to increment per loop
-uint8_t  _currentAnimation = 0;
-uint8_t  _brightness = 50;          //Global brightness percentage -IN USE?
+uint16_t _currentFrame     = 0;     // INFO: move this variable to the void loop() scope and save some CPU ?
+uint16_t _animationSpeed   = 100;    // number of frames to increment per loop
+uint8_t  _currentAnimation = 18;
+uint8_t  _brightness       = 50;    //Global brightness percentage -IN USE?
 bool     _reverseDirection = false; // INFO: currently constant
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
@@ -60,6 +57,7 @@ void SetupFastLed()
   FastLED.addLeds<LedStripType, DataPin>(_leds, NumberOfPixels).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(MaxBrightness);
   FastLED.clear();
+  FastLED.show();
 }
 
 // A small helper
@@ -110,31 +108,24 @@ void RunCurrentAnimation()
 {
   switch(_currentAnimation)
   {
-    case 1: RingPair    (_currentFrame); break;
-    case 2: DoubleChaser(_currentFrame); break;
-    case 3: TripleBounce(_currentFrame); break;
-    case 4: WaveInt     (_leds, _currentFrame, _baseColorHue); break;
-    case 5: Wave        (_leds, _currentFrame, _baseColorHue); break;
-    case 6: Spark       (_leds, _currentFrame, 255, _baseColorHue); break; // Overloaded version of "Spark" with Hue value, 255 for fade is the slowest fade possible. 256 is on/off
-    case 7: Spark       (_leds, _currentFrame, 246, _baseColorHue);break; //Overloaded version of "Spark" with Hue value, 246 fade is faster which makes for a sharper dropoff
-    case 8: Spark       (_leds, _currentFrame, 255); break;               //"Spark" function without hue make a white spark, 255 for fade is the slowest fade possible.
-    case 9: Spark       (_leds, _currentFrame, 245); break;           //"Spark" function without hue make a white spark, 246 fade is faster which makes for a sharper dropoff      
-      
+    case  1: RingPair    (_currentFrame); break;
+    case  2: DoubleChaser(_currentFrame); break;
+    case  3: TripleBounce(_currentFrame); break;
+    case  4: WaveInt     (_leds, _currentFrame, _baseColorHue); break;
+    case  5: Wave        (_leds, _currentFrame, _baseColorHue); break;
+    case  6: Spark       (_leds, _currentFrame, 255, _baseColorHue); break; // Overloaded version of "Spark" with Hue value, 255 for fade is the slowest fade possible. 256 is on/off
+    case  7: Spark       (_leds, _currentFrame, 246, _baseColorHue);break; //Overloaded version of "Spark" with Hue value, 246 fade is faster which makes for a sharper dropoff
+    case  8: Spark       (_leds, _currentFrame, 255); break;               //"Spark" function without hue make a white spark, 255 for fade is the slowest fade possible.
+    case  9: Spark       (_leds, _currentFrame, 220); break;           //"Spark" function without hue make a white spark, 246 fade is faster which makes for a sharper dropoff      
     case 10: RainbowSpark(_leds,_currentFrame, 240); break;            //240 for dropoff is a pretty sharp fade, good for this _currentAnimation
-    
     case 11: rainbow(); break;
-    
     case 12: rainbowWithGlitter(); break;
-    
     case 13: confetti(); break;
-    
     case 14: sinelon(); break;
-    
     case 15: juggle(); break;
-    
     case 16: bpm(); break;
-
     case 17: Fire2012(); break;
+    case 18: SimpleEigth(); delay(48); break;
     
     default: FastLED.clear();
       delay(100); //Animation OFF
@@ -206,23 +197,45 @@ void RingPair(uint16_t frame)     //2 rings animations at inverse phases
   Ring(IntMax - frame, 150);
 }
 
-
 void RainbowSpark(CRGB targetStrip[], uint16_t _currentAnimationFrame,uint8_t fade)
 {
   // Color spark where hue is function of frame
   Spark(targetStrip, _currentAnimationFrame, fade, _currentAnimationFrame/255);
 }
 
+// Python-esc modulo.
+int m(int a, int b)
+{
+  int c = a % b;
+  if (c < 0)  { c += b; }
+  return c;
+}
+
+// Shortcut for modulo 16.
+int m16(int x)
+{
+  return m(x, 16);
+}
+
+int Order8[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 15, 14, 13, 12, 11, 10, 9, 8 };
+int _step = 0;
+
 void SimpleEigth()
 {  
   for(int i = 0; i < NumberOfPixels; i++)
   { 
     int dot = Order8[i];
-    
-    _leds[dot] = CRGB::Green;    
-    // clear this led for the next time around the loop
-    _leds[dot] = CRGB::Black;
-   }
+
+    if(i==m16(_step))
+    {
+      _leds[dot] = CRGB::Green; 
+    }
+    else
+    {
+      _leds[dot] = CRGB::Black;
+    }
+  }
+  _step++;
 }
 
 void CircleHardwareOrder()
@@ -272,16 +285,15 @@ void Bounce(uint16_t frame, uint8_t hue)
   {
     pos16 = frame * 2;
   
-  }else{
+  }
+  else
+  {
     pos16 = IntMax - ((frame - (IntMax/2))*2);
   }
 
   int position = map(pos16, 0, IntMax, 0, ((NumberOfPixels) * 16));
   drawFractionalBar(_leds, position, 3, hue,0);
 }
-
-
-
 
 //************************          Ring           ******************************
 // Anti-aliased cyclical chaser, 3 pixels wide
@@ -300,7 +312,8 @@ void Ring(uint16_t frame, uint8_t hue)
 // Squeezing achieved by using an exponential (^8) sin value
 // Color is determined by "hue"
 //***********************************************************************************
-void Wave(CRGB targetStrip[], uint16_t frame, uint8_t hue){
+void Wave(CRGB targetStrip[], uint16_t frame, uint8_t hue)
+{
   FastLED.clear();    //Clear previous buffer
   float deg; 
   float value; 
@@ -316,26 +329,26 @@ void Wave(CRGB targetStrip[], uint16_t frame, uint8_t hue){
   } 
 }
 
-
 //***************************   Wave [Integer Math]  *******************************
 // unadulterated sine wave.  
 // Uses FastLED sin16() and no float math for efficiency. 
 // Since im stuck with integer values, exponential wave-forming is not possible (unless i'm wrong???)
 // Color is determined by "hue"
 //***********************************************************************************
-void WaveInt(CRGB targetStrip[], uint16_t frame, uint8_t hue){
+void WaveInt(CRGB targetStrip[], uint16_t frame, uint8_t hue)
+{
   FastLED.clear();
   uint8_t stripLength = sizeof(_leds)/sizeof(CRGB);
   uint8_t value;
   for(uint8_t i=0;i<stripLength;i++)
   {
     value=(sin16(frame+((IntMax/stripLength)*i)) + (IntMax/2))/256;   
-    if(value>=0){   
+    if(value>=0)
+    {   
       targetStrip[i] += CHSV(hue,255,value);
     }
   } 
 }
-
 
 //********************************   Color Spark  ***********************************
 // Color of the sparks is determined by "hue"
@@ -369,55 +382,56 @@ void Spark(CRGB targetStrip[], uint16_t _currentAnimationFrame, uint8_t fade, ui
 // fade = 256 means no dropoff, pixels are on or off
 // NOTE: this _currentAnimation doesnt clear the previous buffer because the fade/dropoff is a function of the previous LED state
 //***********************************************************************************
-void Spark(CRGB targetStrip[], uint16_t _currentAnimationFrame,uint8_t fade){
+void Spark(CRGB targetStrip[], uint16_t _currentAnimationFrame,uint8_t fade)
+{
   uint8_t stripLength = sizeof(_leds)/sizeof(CRGB);
   uint16_t rand = random16();
   
   for(int i=0;i<stripLength;i++)
-    {   
-      targetStrip[i].nscale8(fade);
-    }
-  
+  {   
+    targetStrip[i].nscale8(fade);
+  }  
 
   if(rand < (IntMax / (256 - (constrain(_animationSpeed,1,255)))))
   {
     targetStrip[rand % stripLength].setHSV(0,0,255);
   }
-
 }
 
 //******************************       Fire 2012       **********************************
 void Fire2012()
 {
-  //Fire2012(); // run simulation frame
-  //FastLED.show(); // display this frame
-  //FastLED.delay(1000 / FramesPerSecond);  
-  
   static byte heat[NumberOfPixels]; // Array of temperature readings at each simulation cell
 
   // Step 1.  Cool down every cell a little
-  for( int i = 0; i < NumberOfPixels; i++) {
+  for( int i = 0; i < NumberOfPixels; i++) 
+  {
     heat[i] = qsub8( heat[i],  random8(0, ((CoolingFactor * 10) / NumberOfPixels) + 2));
   }
 
   // Step 2.  Heat from each cell drifts 'up' and diffuses a little
-  for( int k= NumberOfPixels - 1; k >= 2; k--) {
+  for( int k= NumberOfPixels - 1; k >= 2; k--) 
+  {
     heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2] ) / 3;
   }
   
   // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
-  if( random8() < SparkingFactor ) {
+  if( random8() < SparkingFactor ) 
+  {
     int y = random8(7);
     heat[y] = qadd8( heat[y], random8(160,255) );
   }
 
   // Step 4.  Map from heat cells to LED colors
-  for( int j = 0; j < NumberOfPixels; j++) {
+  for( int j = 0; j < NumberOfPixels; j++)
+  {
     CRGB color = HeatColor( heat[j]);
     int pixelnumber;
-    if( _reverseDirection ) {
+    if( _reverseDirection )
+    {
       pixelnumber = (NumberOfPixels-1) - j;
-    } else {
+    } else 
+    {
       pixelnumber = j;
     }
     _leds[pixelnumber] = color;
@@ -427,7 +441,7 @@ void Fire2012()
 void nextPattern()
 {
   // add one to the current pattern number, and wrap around at the end
- // gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE( gPatterns);
+  // gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE( gPatterns);
 }
 
 void rainbow() 
@@ -533,14 +547,13 @@ void drawFractionalBar(CRGB targetStrip[], int pos16, int width, uint8_t hue, bo
 /**************************************************************************/
 void loop(void)
 {
-  
-  
   RunCurrentAnimation();
   
-  FastLED.show();         //All animations are applied!..send the results to the strip(s)
+  FastLED.show();                       //All animations are applied!..send the results to the strip(s)
   _currentFrame += _animationSpeed;
-  Serial.print('F');
-  Serial.println(_currentFrame);
+  //Serial.print('F');
+  //Serial.println(_currentFrame);
+  
   FastLED.delay(1000/FramesPerSecond);
   EVERY_N_MILLISECONDS( 20 ) { gHue++; }
   
