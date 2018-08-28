@@ -33,7 +33,7 @@ uint8_t  _baseColorHue = 180;
 
 uint16_t _currentFrame     = 0;     // INFO: move this variable to the void loop() scope and save some CPU ?
 uint16_t _animationSpeed   = 100;    // number of frames to increment per loop
-uint8_t  _currentAnimation = 18;
+uint8_t  _currentAnimation = 19;
 uint8_t  _brightness       = 50;    //Global brightness percentage -IN USE?
 bool     _reverseDirection = false; // INFO: currently constant
 
@@ -126,6 +126,8 @@ void RunCurrentAnimation()
     case 16: bpm(); break;
     case 17: Fire2012(); break;
     case 18: SimpleEigth(); delay(48); break;
+    case 19: DoubleRotor(); delay(96); break;
+    case 20: DoublePendulum(); delay(48); break;
     
     default: FastLED.clear();
       delay(100); //Animation OFF
@@ -217,6 +219,12 @@ int m16(int x)
   return m(x, 16);
 }
 
+// Shortcut for modulo 8.
+int m8(int x)
+{
+  return m(x, 8);
+}
+
 int Order8[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 15, 14, 13, 12, 11, 10, 9, 8 };
 int _step = 0;
 
@@ -236,6 +244,66 @@ void SimpleEigth()
     }
   }
   _step++;
+}
+
+//int OrderLeft[16]  = { 14, 13, 12, 11, 10, 9, 8, 15};
+//int OrderRight[16] = {  0,  1,  2,  3,  4, 5, 6,  7 };
+void DoubleRotor()
+{  
+  for(int i = 0; i < 8; i++)
+  { 
+    int dotL = Order8[i+8];
+    int dotR = Order8[i];
+
+    if(i==m8(_step)||i==m8(_step+4))
+    {
+      _leds[dotL] = CHSV( 200, 255, 255);
+      _leds[dotR] = CHSV( 200, 255, 255); 
+    }
+    else if(i==m8(_step-1)||i==m8(_step+3))
+    {
+      _leds[dotL] = CHSV( 200, 255, 64);
+      _leds[dotR] = CHSV( 200, 255, 64);
+    }
+    else
+    {
+      _leds[dotL] = CRGB::Black;
+      _leds[dotR] = CRGB::Black;
+    }
+  }
+  _step++;
+}
+
+void DoublePendulum()
+{  
+  for(int i = 0; i < 8; i++)
+  { 
+    int dotL = Order8[i+8];
+    int dotR = Order8[i];
+
+    if(i==m8(_step))
+    {
+      _leds[dotL] = CRGB::Blue;
+      _leds[dotR] = CRGB::Blue; 
+    }
+    else
+    {
+      _leds[dotL] = CRGB::Black;
+      _leds[dotR] = CRGB::Black;
+    }
+  }
+  _step++;
+}
+
+int HorizontalScannerOrder[16]  = { 14, 13, 12, 11, 10, 9, 8, 15};
+void Scanner()
+{
+  int dotL = Order8[i+8];
+  for(int i = 0; i < NumberOfPixels; i++)
+  {
+    if 
+    _leds[i]
+  }
 }
 
 void CircleHardwareOrder()
